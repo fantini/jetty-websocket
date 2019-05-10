@@ -4,8 +4,6 @@ import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
@@ -33,35 +31,35 @@ public class PrintEndPoint {
 		session.setMaxIdleTimeout(30*60*1000);
 		session.setMaxTextMessageBufferSize(5*1024*1024);
 		
-		LOGGER.info("Socket Connected: " + session);
+		LOGGER.info("Socket connected on " + session.getRequestURI());
     }
     
     @OnMessage
     public void onWebSocketText(String message)
     {
     	try {
-			
-    		PrintService service = PrintServiceLookup.lookupDefaultPrintService();
     		
-    		LOGGER.info("Initializing print service to "+service.getName());
+    		LOGGER.info("Initializing print service ...");
     		
-			PDDocument document = PDDocument.load(Base64.getDecoder().decode(message));
+			try (PDDocument document = PDDocument.load(Base64.getDecoder().decode(message))) {
 	        
-	        LOGGER.info("Initiating sending the file to the print server");
-	        
-	        PrintUtils.print(document, PaperSize.A4);
+		        LOGGER.info("Initiating sending the file to the print server");
+		        		        
+		        PrintUtils.print(document, PaperSize.A4);
+		        
+			}
 	        
 	        LOGGER.info("Finished sending the file to the print server");
 			
     	} catch(Exception e) {
-    		LOGGER.log(Level.SEVERE, e.getMessage());
+    		LOGGER.log(Level.SEVERE, e.getMessage(), e.getCause());
     	}
     }    
     
     @OnClose
     public void onWebSocketClose(CloseReason reason)
     {
-    	LOGGER.info("Socket Closed: " + reason);
+    	LOGGER.info("Socket closed: " + reason);
     }
     
     @OnError
